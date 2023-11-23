@@ -17,23 +17,22 @@ def get_urls(friend_id):
     return urls
 
 
-def scrape_latest_data(friend_data, page, url):
+def scrape_latest_data(friend_id, data, page, url):
     page.goto(url)
     # TODO: Identify interesting data and scrape.
 
 
-def scrape_stats_data(friend_data, page, url):
+def scrape_stats_data(friend_id, data, page, url):
     page.goto(url)
     # TODO: Identify interesting data and scrape.
 
 
-def scrape_friend_data(data, page):
-    friend_id = data["id"]
+def scrape_friend_data(friend_id, data, page):
     for page_type, url in get_urls(friend_id).items():
         if page_type == "latest":
-            scrape_latest_data(data, page, url)
+            scrape_latest_data(friend_id, data, page, url)
         elif page_type == "stats":
-            scrape_stats_data(data, page, url)
+            scrape_stats_data(friend_id, data, page, url)
 
 
 def scrape_data(friends):
@@ -41,8 +40,8 @@ def scrape_data(friends):
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         log_in(page)
-        for _, data in friends.items():
-            scrape_friend_data(data, page)
+        for friend_id, data in friends.items():
+            scrape_friend_data(friend_id, data, page)
 
 
 if __name__ == "__main__":

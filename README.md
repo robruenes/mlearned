@@ -34,12 +34,12 @@ The tool expects that you have two environment variables defined.
 
 The tool expects that you have a file named `friends.json` in the same directory, for all of the friends who you want to make predictions for.
 
-The structure expected is below, mapping names to maps containing an ID.
+The structure expected is below, mapping LearnedLeague user IDs to human-readable names.
 
 ```json
 {
-  "FriendFoo": { "id": "12345" },
-  "FriendBar": { "id": "23456" },
-  "FriendBaz": { "id": "34567" }
+  "12345": { "name": "Foo Friendly" },
+  "23456": { "name": "Bar Friendo" },
+  "34567": { "name": "Baz Friender" }
 }
 ```

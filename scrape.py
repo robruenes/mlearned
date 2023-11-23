@@ -11,9 +11,29 @@ def log_in(page):
     page.click('#sidebar input[type="submit"]')
 
 
-def scrape_friend_data(friend, data, page):
+def get_urls(friend_id):
+    base_url = "https://www.learnedleague.com/profiles.php?{id}".format(id=friend_id)
+    urls = {"latest": base_url + "&1", "stats": base_url + "&2"}
+    return urls
+
+
+def scrape_latest_data(friend_data, page, url):
+    page.goto(url)
+    # TODO: Identify interesting data and scrape.
+
+
+def scrape_stats_data(friend_data, page, url):
+    page.goto(url)
+    # TODO: Identify interesting data and scrape.
+
+
+def scrape_friend_data(data, page):
     friend_id = data["id"]
-    page.goto("https://www.learnedleague.com/profiles.php?{id}".format(id=friend_id))
+    for page_type, url in get_urls(friend_id).items():
+        if page_type == "latest":
+            scrape_latest_data(data, page, url)
+        elif page_type == "stats":
+            scrape_stats_data(data, page, url)
 
 
 def scrape_data(friends):
@@ -21,8 +41,8 @@ def scrape_data(friends):
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         log_in(page)
-        for friend, data in friends.items():
-            scrape_friend_data(friend, data, page)
+        for _, data in friends.items():
+            scrape_friend_data(data, page)
 
 
 if __name__ == "__main__":

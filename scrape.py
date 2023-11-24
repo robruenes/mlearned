@@ -1,5 +1,7 @@
 import os
 import json
+import pandas as pd
+from io import StringIO
 
 from playwright.sync_api import sync_playwright
 
@@ -19,12 +21,14 @@ def get_urls(friend_id):
 
 def scrape_latest_data(friend_id, data, page, url):
     page.goto(url)
-    # TODO: Identify interesting data and scrape.
+    table = page.locator("div.fl_latest.fl_l_l.pldata").inner_html()
+    dataframes = pd.read_html(StringIO(table))
 
 
 def scrape_stats_data(friend_id, data, page, url):
     page.goto(url)
-    # TODO: Identify interesting data and scrape.
+    table = page.locator(".statscontainer").inner_html()
+    dataframes = pd.read_html(StringIO(table))
 
 
 def scrape_friend_data(friend_id, data, page):

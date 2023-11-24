@@ -22,13 +22,41 @@ def get_urls(friend_id):
 def scrape_latest_data(friend_id, data, page, url):
     page.goto(url)
     table = page.locator("div.fl_latest.fl_l_l.pldata").inner_html()
-    dataframes = pd.read_html(StringIO(table))
+    df = pd.read_html(StringIO(table))
+
+
+def transform_rundle_value(rundle):
+    rundle_mapping = {
+        "R": 1,
+        "E": 1,
+        "D": 2,
+        "C": 3,
+        "B": 4,
+        "A": 5,
+    }
+    return rundle_mapping[rundle[0]]
 
 
 def scrape_stats_data(friend_id, data, page, url):
     page.goto(url)
     table = page.locator(".statscontainer").inner_html()
-    dataframes = pd.read_html(StringIO(table))
+    df = pd.read_html(StringIO(table))[0]
+
+    # Remove the rank column.
+    df.drop(["Rank"], axis=1, inplace=True)
+
+    # Drop career and per-rundle aggregated statistics.
+    df = df[df["Season"].map(lambda season: season.startswith("LL"))]
+
+    # Transform the rundle string into a numerical value.
+    df["Rundle"] = df["Rundle"].transform(transform_rundle_value)
+
+    # Drop the now unnecessary season column, and reindex
+    # to account for dropped columns.
+    df.drop(["Season"], axis=1, inplace=True)
+    df.reset_index(inplace=True)
+    # TODO: Decide how we'll ultimately store this,
+    # and limit to the same number of rows per player.
 
 
 def scrape_friend_data(friend_id, data, page):

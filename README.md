@@ -16,9 +16,11 @@ $ cd /dir/where/you/will/run/tool
 $ pyenv local 3.12.0
 ```
 
-You'll also need to install playwright. Do this _after_ you've created your environment.
+You'll also need to install a few dependencies. Do this _after_ you've created your environment.
 
 ```
+$ pip3 install pandas
+$ pip3 install lxml
 $ pip3 install playwright
 $ playright install
 ```
@@ -40,6 +42,6 @@ The structure expected is below, mapping LearnedLeague user IDs to human-readabl
 {
   "12345": { "name": "Foo Friendly" },
   "23456": { "name": "Bar Friendo" },
-  "34567": { "name": "Baz Friender" }
+  "34567": { "name": "Baz Friendmeinster" }
 }
 ```

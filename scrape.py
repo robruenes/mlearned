@@ -25,6 +25,30 @@ def scrape_latest_data(friend_id, data, page, url):
     df = pd.read_html(StringIO(table))
 
 
+def transform_category_value(category):
+    category_mapping = {
+        "AMER HIST": 0,
+        "ART": 1,
+        "BUS/ECON": 2,
+        "CLASS MUSIC": 3,
+        "CURR EVENTS": 4,
+        "FILM": 5,
+        "FOOD/DRINK": 6,
+        "GAMES/SPORT": 7,
+        "GEOGRAPHY": 8,
+        "LANGUAGE": 9,
+        "LIFESTYLE": 10,
+        "LITERATURE": 11,
+        "MATH": 12,
+        "POP MUSIC": 13,
+        "SCIENCE": 14,
+        "TELEVISION": 15,
+        "THEATRE": 16,
+        "WORLD_HIST": 17,
+    }
+    return category_mapping[category]
+
+
 def transform_rundle_value(rundle):
     rundle_mapping = {
         "R": 1,

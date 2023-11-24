@@ -19,12 +19,6 @@ def get_urls(friend_id):
     return urls
 
 
-def scrape_latest_data(friend_id, data, page, url):
-    page.goto(url)
-    table = page.locator("div.fl_latest.fl_l_l.pldata").inner_html()
-    df = pd.read_html(StringIO(table))
-
-
 def transform_category_value(category):
     category_mapping = {
         "AMER HIST": 0,
@@ -44,9 +38,21 @@ def transform_category_value(category):
         "SCIENCE": 14,
         "TELEVISION": 15,
         "THEATRE": 16,
-        "WORLD_HIST": 17,
+        "WORLD HIST": 17,
     }
     return category_mapping[category]
+
+
+def scrape_latest_data(friend_id, data, page, url):
+    page.goto(url)
+    table = page.locator("div.fl_latest.fl_l_l.pldata").inner_html()
+    df = pd.read_html(StringIO(table))[0]
+    categorical = df[df["Category"].map(lambda category: category != "TOTALS")]
+    categorical["Category"] = categorical["Category"].transform(
+        transform_category_value
+    )
+    # TODO: Decide how this will be stored, and doing something
+    # with the TOTALS row might be useful.
 
 
 def transform_rundle_value(rundle):

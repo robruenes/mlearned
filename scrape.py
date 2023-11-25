@@ -8,12 +8,12 @@ from playwright.sync_api import sync_playwright
 
 def transform_rundle_value(rundle):
     rundle_mapping = {
-        "R": 1,
-        "E": 1,
+        "R": 0,  # Rookie season
+        "E": 1,  # Lowest regular season rundle
         "D": 2,
         "C": 3,
         "B": 4,
-        "A": 5,
+        "A": 5,  # Highest regular season rundle
     }
     return rundle_mapping[rundle[0]]
 
@@ -116,6 +116,8 @@ def scrape_stats_data(page, url):
     - Wins by Forfeit: Self explanatory.
     - Losses by Forfeit: Self explanatory.
     - 3 point questions answered correctly: Self explanatory.
+    - Rundle: The rundle the player competed in, as a measure of average opponent
+        difficulty, using the representation from `transform_rundle_value` above.
     """
 
     page.goto(url)

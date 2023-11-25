@@ -15,32 +15,12 @@ def log_in(page):
 
 def get_urls(friend_id):
     base_url = "https://www.learnedleague.com/profiles.php?{id}".format(id=friend_id)
-    urls = {"latest": base_url + "&1", "stats": base_url + "&2"}
-    return urls
-
-
-def transform_category_value(category):
-    category_mapping = {
-        "AMER HIST": 0,
-        "ART": 1,
-        "BUS/ECON": 2,
-        "CLASS MUSIC": 3,
-        "CURR EVENTS": 4,
-        "FILM": 5,
-        "FOOD/DRINK": 6,
-        "GAMES/SPORT": 7,
-        "GEOGRAPHY": 8,
-        "LANGUAGE": 9,
-        "LIFESTYLE": 10,
-        "LITERATURE": 11,
-        "MATH": 12,
-        "POP MUSIC": 13,
-        "SCIENCE": 14,
-        "TELEVISION": 15,
-        "THEATRE": 16,
-        "WORLD HIST": 17,
+    urls = {
+        "latest": base_url + "&1",
+        "stats": base_url + "&2",
+        "past seasons": base_url + "&7",
     }
-    return category_mapping[category]
+    return urls
 
 
 def scrape_latest_data(friend_id, data, page, url):
@@ -48,8 +28,28 @@ def scrape_latest_data(friend_id, data, page, url):
     table = page.locator("div.fl_latest.fl_l_l.pldata").inner_html()
     df = pd.read_html(StringIO(table))[0]
     categorical = df[df["Category"].map(lambda category: category != "TOTALS")]
-    categorical["Category"] = categorical["Category"].transform(
-        transform_category_value
+    categorical["Category"].replace(
+        {
+            "AMER HIST": 0,
+            "ART": 1,
+            "BUS/ECON": 2,
+            "CLASS MUSIC": 3,
+            "CURR EVENTS": 4,
+            "FILM": 5,
+            "FOOD/DRINK": 6,
+            "GAMES/SPORT": 7,
+            "GEOGRAPHY": 8,
+            "LANGUAGE": 9,
+            "LIFESTYLE": 10,
+            "LITERATURE": 11,
+            "MATH": 12,
+            "POP MUSIC": 13,
+            "SCIENCE": 14,
+            "TELEVISION": 15,
+            "THEATRE": 16,
+            "WORLD HIST": 17,
+        },
+        inplace=True,
     )
     # TODO: Decide how this will be stored, and doing something
     # with the TOTALS row might be useful.
@@ -89,12 +89,35 @@ def scrape_stats_data(friend_id, data, page, url):
     # and limit to the same number of rows per player.
 
 
+def scrape_match_day_history(friend_id, data, page, url):
+    page.goto(url)
+    # Get all tables except the first, which isn't match data.
+    tables = page.locator("div.fl_latest.fl_l_l").all()[1:]
+    for t in tables:
+        # TODO: Use this HTML to navigate to the individual
+        # match days.
+        t_html = t.inner_html()
+        df = pd.read_html(StringIO(t_html))[0]
+        df.drop(["Match Day", "Opponent", "Record", "Rdl Rk"], axis=1, inplace=True)
+        df["Result"].replace({"W": 3, "T": 2, "L": 1, "F": 0}, inplace=True)
+        df["Result.1"] = df["Result.1"].str.replace(r"\(|\)-", " ", regex=True)
+        df["Result.1"] = df["Result.1"].str.replace(")", "")
+        df[["Points", "Correct", "Opponent Points", "Opponent Correct"]] = df[
+            "Result.1"
+        ].str.split(" ", expand=True)
+        df["Correct"].replace({"F": 0}, inplace=True)
+        df["Opponent Correct"].replace({"F": 0}, inplace=True)
+        df.drop("Result.1", axis=1, inplace=True)
+
+
 def scrape_friend_data(friend_id, data, page):
     for page_type, url in get_urls(friend_id).items():
         if page_type == "latest":
             scrape_latest_data(friend_id, data, page, url)
         elif page_type == "stats":
             scrape_stats_data(friend_id, data, page, url)
+        if page_type == "past seasons":
+            scrape_match_day_history(friend_id, data, page, url)
 
 
 def scrape_data(friends):

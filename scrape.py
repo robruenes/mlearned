@@ -245,11 +245,43 @@ def scrape_data(friends):
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         log_in(page)
-        for friend_id, data in friends.items():
+        [
             scrape_friend_data(friend_id, data, page, browser)
+            for friend_id, data in friends.items()
+        ]
+
+
+def print_write_message(filename):
+    print("Writing file {filename}...".format(filename=filename))
+
+
+def write_csvs(friend):
+    name = friend["name"].lower()
+    dir_path = "data/{name}".format(name=name)
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+
+    latest_stats = "{dir}/latest_league_stats.csv".format(dir=dir_path)
+    print_write_message(latest_stats)
+    friend["latest"].to_csv(latest_stats, sep="\t", encoding="utf-8")
+
+    overall_stats = "{dir}/overall_league_stats.csv".format(dir=dir_path)
+    print_write_message(overall_stats)
+    friend["stats"].to_csv(overall_stats, sep="\t", encoding="utf-8")
+
+    for season, match_stats_df in friend["season_to_matches"].items():
+        season_path = "{dir}/{season}".format(dir=dir_path, season=season)
+        if not os.path.exists(season_path):
+            os.makedirs(season_path)
+
+        season_stats = "{dir}/season_stats.csv".format(dir=season_path)
+        print_write_message(season_stats)
+        match_stats_df.to_csv(season_stats, sep="\t", encoding="utf-8")
 
 
 if __name__ == "__main__":
     with open("friends.json") as friends_file:
         friends = json.load(friends_file)
         scrape_data(friends)
+        print("Scraping Finished!")
+        [write_csvs(data) for _, data in friends.items()]

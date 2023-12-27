@@ -249,6 +249,7 @@ def scrape_data(friends):
             scrape_friend_data(friend_id, data, page, browser)
             for friend_id, data in friends.items()
         ]
+    print("Scraping Finished!")
 
 
 def print_write_message(filename):
@@ -283,5 +284,4 @@ if __name__ == "__main__":
     with open("friends.json") as friends_file:
         friends = json.load(friends_file)
         scrape_data(friends)
-        print("Scraping Finished!")
         [write_csvs(data) for _, data in friends.items()]

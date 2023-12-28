@@ -1,6 +1,7 @@
 import os
 import json
 import pandas as pd
+import numpy as np
 from io import StringIO
 
 from playwright.sync_api import sync_playwright
@@ -170,14 +171,8 @@ def scrape_match_day_history(page, url, browser):
 
     - Result: Representation of whether the player won (3), tied (2),
         lost (1), or forfeited (0).
-    - Points: Total number of points the player scored.
-    - Correct: Total number of questions answered correctly.
-    - Opponent Points: Total number of points the opponent scored.
-    - Opponent Correct: Total number of questions the opponend
-        answered correctly.
-
-    In the future this method will return more detailed statistics
-    per match.
+    - Columns for each of categories, counting how many questions in a
+        given day belonged to that category.
     """
     page.goto(url)
 
@@ -189,37 +184,73 @@ def scrape_match_day_history(page, url, browser):
     for t in tables:
         # This is of the form "LL#", where # is the season (e.g. "LL99")
         season = t.get_by_role("link").nth(0).inner_html()
+        print("...Scraping Season {season}".format(season=season))
 
-        # Collect high level match day data for the season
-        df = pd.read_html(StringIO(t.inner_html()))[0]
-        df.drop(["Match Day", "Opponent", "Record", "Rdl Rk"], axis=1, inplace=True)
-        df["Result"].replace({"W": 3, "T": 2, "L": 1, "F": 0}, inplace=True)
-        df["Result.1"] = df["Result.1"].str.replace(r"\(|\)-", " ", regex=True)
-        df["Result.1"] = df["Result.1"].str.replace(")", "")
-        df[["Points", "Correct", "Opponent Points", "Opponent Correct"]] = df[
-            "Result.1"
-        ].str.split(" ", expand=True)
-        df["Correct"].replace({"F": 0}, inplace=True)
-        df["Opponent Correct"].replace({"F": 0}, inplace=True)
-        df.drop("Result.1", axis=1, inplace=True)
+        matches_df = pd.read_html(StringIO(t.inner_html()))[0][["Result"]]
+        matches_df["Result"].replace(
+            {"W": "3", "T": "2", "L": "1", "F": "0"}, inplace=True
+        )
+        matches_df["Result"] = matches_df["Result"].str[0]
+        # TODO: Add a Rundle column as well.
 
-        season_to_matches[season] = df
+        zeros = np.zeros(len(matches_df), dtype=int)
+        question_counts = {
+            "AMER HIST": zeros,
+            "ART": zeros,
+            "BUS/ECON": zeros,
+            "CLASS MUSIC": zeros,
+            "CURR EVENTS": zeros,
+            "FILM": zeros,
+            "FOOD/DRINK": zeros,
+            "GAMES/SPORT": zeros,
+            "GEOGRAPHY": zeros,
+            "LANGUAGE": zeros,
+            "LIFESTYLE": zeros,
+            "LITERATURE": zeros,
+            "MATH": zeros,
+            "POP MUSIC": zeros,
+            "SCIENCE": zeros,
+            "TELEVISION": zeros,
+            "THEATRE": zeros,
+            "WORLD HIST": zeros,
+        }
+        matches_df = matches_df.assign(**question_counts)
 
         # Collect links of every match
-        # links = t.get_by_role("link").filter(has_text=")-").all()
-        # match_pages = [
-        #     "https://www.learnedleague.com{match_selector}".format(
-        #         match_selector=l.get_attribute("href")
-        #     )
-        #     for l in links
-        # ]
+        links = t.get_by_role("link").filter(has_text=")-").all()
+        match_pages = [
+            "https://www.learnedleague.com{match_selector}".format(
+                match_selector=l.get_attribute("href")
+            )
+            for l in links
+        ]
 
-        # # We need to create a new page here, otherwise the outer
-        # # loop gets stuck.
-        # new_page = browser.new_page()
-        # log_in(new_page)
-        # for match in match_pages:
-        #     new_page.goto(match)
+        # We need to create a new page here, otherwise the outer
+        # loop gets stuck.
+        new_page = browser.new_page()
+        log_in(new_page)
+
+        # TODO: This approach is wasteful; questions aren't unique to
+        # a given player so there's no real need to parse a day's
+        # set of questions for every user. Instead, the code should
+        # be refactored to determine the question categories *once*,
+        # and then join that information against an individual player's
+        # win/loss stats from their match history page.
+        for i, match in enumerate(match_pages):
+            print("......Scraping Match {i}".format(i=i))
+            new_page.goto(match)
+            questions_df = (
+                pd.read_html(StringIO(new_page.inner_html("body")))[2][
+                    ["Question/Answer.1"]
+                ][:6]
+                .astype("string")
+                .apply(lambda s: s.str.split(" —").str.get(0), axis=1)
+            )
+
+            for category in questions_df.to_numpy().flatten():
+                matches_df.at[i, category] = matches_df.at[i, category] + 1
+
+        season_to_matches[season] = matches_df
 
     return season_to_matches
 

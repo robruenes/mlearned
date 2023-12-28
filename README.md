@@ -27,10 +27,11 @@ $ playright install
 
 # Credentials
 
-The tool expects that you have two environment variables defined.
+The tool expects that you have a few environment variables defined.
 
 - `LL_USER`: Your LearnedLeague username.
 - `LL_PASS`: Your LearnedLeague password.
+- `GEMINI_KEY`: An API key for Google's Gemini model, which you can get by following the [instructions here](https://ai.google.dev/tutorials/setup).
 
 # friends.json
 

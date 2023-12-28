@@ -51,7 +51,7 @@ def log_in(page):
 
 
 def get_urls_for_friend(friend_id):
-    base_url = "https://www.learnedleague.com/profiles.php?{id}".format(id=friend_id)
+    base_url = "https://www.learnedleague.com/profiles.php?{}".format(friend_id)
     urls = {
         "latest": base_url + "&1",
         "stats": base_url + "&2",
@@ -163,6 +163,65 @@ def scrape_stats_data(page, url):
     return df
 
 
+def matches_df_from_table(t):
+    matches_df = pd.read_html(StringIO(t.inner_html()))[0][["Result"]]
+    matches_df["Result"].replace({"W": "3", "T": "2", "L": "1", "F": "0"}, inplace=True)
+    matches_df["Result"] = matches_df["Result"].str[0]
+    # TODO: Add a Rundle column as well.
+    return matches_df
+
+
+def set_and_cache_question_counts(
+    browser, matches_df, match_pages, season, season_match_category_cache
+):
+    # We need to create a new page here, otherwise the outer
+    # loop in scrape_match_day_history gets stuck
+    new_page = browser.new_page()
+    log_in(new_page)
+
+    zeros = np.zeros(len(matches_df), dtype=int)
+    question_counts = {
+        "AMER HIST": zeros,
+        "ART": zeros,
+        "BUS/ECON": zeros,
+        "CLASS MUSIC": zeros,
+        "CURR EVENTS": zeros,
+        "FILM": zeros,
+        "FOOD/DRINK": zeros,
+        "GAMES/SPORT": zeros,
+        "GEOGRAPHY": zeros,
+        "LANGUAGE": zeros,
+        "LIFESTYLE": zeros,
+        "LITERATURE": zeros,
+        "MATH": zeros,
+        "POP MUSIC": zeros,
+        "SCIENCE": zeros,
+        "TELEVISION": zeros,
+        "THEATRE": zeros,
+        "WORLD HIST": zeros,
+    }
+    matches_df = matches_df.assign(**question_counts)
+    for i, match in enumerate(match_pages):
+        print("....Scraping question categories for match {}".format(i))
+        new_page.goto(match)
+        question_categories = (
+            pd.read_html(StringIO(new_page.inner_html("body")))[2][
+                ["Question/Answer.1"]
+            ][:6]
+            .astype("string")
+            .apply(lambda s: s.str.split(" —").str.get(0), axis=1)
+            .to_numpy()
+            .flatten()
+        )
+
+        for category in question_categories:
+            matches_df.at[i, category] = matches_df.at[i, category] + 1
+
+    cached_match_df = matches_df.copy(deep=True)
+    cached_match_df.drop(columns=["Result"], inplace=True)
+    season_match_category_cache[season] = cached_match_df
+
+
 def scrape_match_day_history(page, url, browser, season_match_category_cache):
     """
     Returns a mapping of season names (e.g. "LL99") to dataframes
@@ -184,14 +243,9 @@ def scrape_match_day_history(page, url, browser, season_match_category_cache):
     for t in tables:
         # This is of the form "LL#", where # is the season (e.g. "LL99")
         season = t.get_by_role("link").nth(0).inner_html()
-        print("...Scraping Season {season}".format(season=season))
+        print("...Scraping Season {}".format(season))
 
-        matches_df = pd.read_html(StringIO(t.inner_html()))[0][["Result"]]
-        matches_df["Result"].replace(
-            {"W": "3", "T": "2", "L": "1", "F": "0"}, inplace=True
-        )
-        matches_df["Result"] = matches_df["Result"].str[0]
-        # TODO: Add a Rundle column as well.
+        matches_df = matches_df_from_table(t)
 
         # Collect links of every match
         links = t.get_by_role("link").filter(has_text=")-").all()
@@ -203,61 +257,13 @@ def scrape_match_day_history(page, url, browser, season_match_category_cache):
         ]
 
         if season not in season_match_category_cache:
-            # We need to create a new page here, otherwise the outer
-            # loop gets stuck.
-            new_page = browser.new_page()
-            log_in(new_page)
-
-            zeros = np.zeros(len(matches_df), dtype=int)
-            question_counts = {
-                "AMER HIST": zeros,
-                "ART": zeros,
-                "BUS/ECON": zeros,
-                "CLASS MUSIC": zeros,
-                "CURR EVENTS": zeros,
-                "FILM": zeros,
-                "FOOD/DRINK": zeros,
-                "GAMES/SPORT": zeros,
-                "GEOGRAPHY": zeros,
-                "LANGUAGE": zeros,
-                "LIFESTYLE": zeros,
-                "LITERATURE": zeros,
-                "MATH": zeros,
-                "POP MUSIC": zeros,
-                "SCIENCE": zeros,
-                "TELEVISION": zeros,
-                "THEATRE": zeros,
-                "WORLD HIST": zeros,
-            }
-            matches_df = matches_df.assign(**question_counts)
-
-            for i, match in enumerate(match_pages):
-                print("......Scraping question categories for match {i}".format(i=i))
-                new_page.goto(match)
-                question_categories = (
-                    (
-                        pd.read_html(StringIO(new_page.inner_html("body")))[2][
-                            ["Question/Answer.1"]
-                        ][:6]
-                        .astype("string")
-                        .apply(lambda s: s.str.split(" —").str.get(0), axis=1)
-                    )
-                    .to_numpy()
-                    .flatten()
-                )
-
-                for category in question_categories:
-                    matches_df.at[i, category] = matches_df.at[i, category] + 1
-
-            cached_match_df = matches_df.copy(deep=True)
-            cached_match_df.drop(columns=["Result"], inplace=True)
-            season_match_category_cache[season] = cached_match_df
+            set_and_cache_question_counts(
+                browser, matches_df, match_pages, season, season_match_category_cache
+            )
 
         else:
             print(
-                "......Already have question categories for all {season} matches".format(
-                    season=season
-                )
+                "....Already have question categories for all {} matches".format(season)
             )
             matches_df = matches_df.assign(**season_match_category_cache[season])
 
@@ -270,15 +276,15 @@ def scrape_friend_data(friend_id, data, page, browser, season_match_category_cac
     friend_name = data["name"]
     for page_type, url in get_urls_for_friend(friend_id).items():
         if page_type == "latest":
-            print("Scraping latest data for {friend}...".format(friend=friend_name))
+            print("Scraping latest data for {}...".format(friend_name))
             data["latest"] = scrape_latest_data(page, url)
 
         elif page_type == "stats":
-            print("Scraping stats data for {friend}...".format(friend=friend_name))
+            print("Scraping stats data for {}...".format(friend_name))
             data["stats"] = scrape_stats_data(page, url)
 
         elif page_type == "past seasons":
-            print("Scraping match data for {friend}...".format(friend=friend_name))
+            print("Scraping match data for {}...".format(friend_name))
             data["season_to_matches"] = scrape_match_day_history(
                 page, url, browser, season_match_category_cache
             )
@@ -300,29 +306,29 @@ def scrape_data(friends):
 
 
 def print_write_message(filename):
-    print("Writing file {filename}...".format(filename=filename))
+    print("Writing file {}...".format(filename))
 
 
 def write_csvs(friend):
     name = friend["name"].lower()
-    dir_path = "data/{name}".format(name=name)
+    dir_path = "data/{}".format(name)
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
-    latest_stats = "{dir}/latest_league_stats.csv".format(dir=dir_path)
+    latest_stats = "{}/latest_league_stats.csv".format(dir_path)
     print_write_message(latest_stats)
     friend["latest"].to_csv(latest_stats, sep="\t", encoding="utf-8")
 
-    overall_stats = "{dir}/overall_league_stats.csv".format(dir=dir_path)
+    overall_stats = "{}/overall_league_stats.csv".format(dir_path)
     print_write_message(overall_stats)
     friend["stats"].to_csv(overall_stats, sep="\t", encoding="utf-8")
 
     for season, match_stats_df in friend["season_to_matches"].items():
-        season_path = "{dir}/{season}".format(dir=dir_path, season=season)
+        season_path = "{}/{}".format(dir_path, season)
         if not os.path.exists(season_path):
             os.makedirs(season_path)
 
-        season_stats = "{dir}/season_stats.csv".format(dir=season_path)
+        season_stats = "{}/season_stats.csv".format(season_path)
         print_write_message(season_stats)
         match_stats_df.to_csv(season_stats, sep="\t", encoding="utf-8")
 

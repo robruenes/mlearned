@@ -21,6 +21,7 @@ You'll also need to install a few dependencies. Do this _after_ you've created y
 ```
 $ pip3 install pandas
 $ pip3 install lxml
+$ pip3 install google-generativeai
 $ pip3 install playwright
 $ playright install
 ```

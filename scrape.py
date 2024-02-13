@@ -164,7 +164,7 @@ def matches_df_from_table(t):
     # The string containing the rundle is formed like "Rundle C Sugarloaf Div 1"
     # so we just grab the exact char we need out of it.
     rundle = t.locator("h3").inner_text()[7:8]
-    matches_df["Rundle"] = transform_rundle_value
+    matches_df["Rundle"] = transform_rundle_value(rundle)
     return matches_df
 
 

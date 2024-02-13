@@ -161,7 +161,10 @@ def matches_df_from_table(t):
     matches_df = pd.read_html(StringIO(t.inner_html()))[0][["Result"]]
     matches_df["Result"].replace({"W": "3", "T": "2", "L": "1", "F": "0"}, inplace=True)
     matches_df["Result"] = matches_df["Result"].str[0]
-    # TODO: Add a Rundle column as well.
+    # The string containing the rundle is formed like "Rundle C Sugarloaf Div 1"
+    # so we just grab the exact char we need out of it.
+    rundle = t.locator("h3").inner_text()[7:8]
+    matches_df["Rundle"] = transform_rundle_value
     return matches_df
 
 

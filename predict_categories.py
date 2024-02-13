@@ -1,5 +1,8 @@
 import os
+import login
 import google.generativeai as genai
+
+from playwright.sync_api import sync_playwright
 
 genai.configure(api_key=os.environ["GEMINI_KEY"])
 
@@ -157,18 +160,22 @@ def predict_categories(questions):
     return [extract_category(question) for question in questions]
 
 
+def extract_questions(page):
+    question_ids = [f"#q_field{i}" for i in range(1, 7)]
+    questions = [page.locator(id).nth(0).inner_text() for id in question_ids]
+    return questions
+
+
+def predict_categories_for_match(season, match_day):
+    match_day_url = f"https://www.learnedleague.com/match.php?{season}&{match_day}"
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        login.log_into_ll(page)
+        page.goto(match_day_url)
+        return predict_categories(extract_questions(page))
+
+
 ### For testing
 if __name__ == "__main__":
-    test_questions = [
-        # Expected: GEOGRAPHY
-        "Of the various geographical entities across the world whose names begin with 'New', which one is a territory in the South Pacific Ocean named after most of the land area that is now the country of Scotland?",
-        # Expected: MATH
-        "In the linear equation with the general form y = mx + b, what word is typically used to indicate what is represented by m?",
-        # Expected: GAMES/SPORT
-        "While the pitching staff of the 1948 World Series-winning Cleveland Indians featured mound virtuoso Bob Feller and fellow Hall of Famer Bob Lemon, it also famously included what other legend and future Hall of Fame inductee, who had made his professional debut 22 years earlier with the Chattanooga Black Lookouts?",
-        # Expected: FOOD/DRINK
-        "A dish widely recognized as the national dish of Mexico is a mole that originated in and is named after what Mexican state (as is the pepper that provides a main ingredient)? The state's capital city is a settlement that sits on Mexican Federal Highway 150D between Mexico City and the Atlantic port of Veracruz. Note, name the state (or the capital city, which has the same name).",
-        # Expected: LIFESTYLE
-        "Derived from a German word for a particular type of educational institution, what four-letter word is Yiddish for synagogue?",
-    ]
-    print(predict_categories(test_questions))
+    print(predict_categories_for_match(season=100, match_day=1))

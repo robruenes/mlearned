@@ -2,6 +2,7 @@ import os
 import json
 import pandas as pd
 import numpy as np
+import login
 from io import StringIO
 
 from playwright.sync_api import sync_playwright
@@ -41,13 +42,6 @@ def transform_category_value(category):
         "WORLD HIST": 17,
     }
     return category_mapping[category]
-
-
-def log_in(page):
-    page.goto("https://www.learnedleague.com/")
-    page.fill('#sidebar input[name="username"]', os.environ["LL_USER"])
-    page.fill('#sidebar input[name="password"]', os.environ["LL_PASS"])
-    page.click('#sidebar input[type="submit"]')
 
 
 def get_urls_for_friend(friend_id):
@@ -177,7 +171,7 @@ def set_and_cache_question_counts(
     # We need to create a new page here, otherwise the outer
     # loop in scrape_match_day_history gets stuck
     new_page = browser.new_page()
-    log_in(new_page)
+    login.log_into_ll(new_page)
 
     zeros = np.zeros(len(matches_df), dtype=int)
     question_counts = {
@@ -295,7 +289,7 @@ def scrape_data(friends):
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         season_match_category_cache = {}
-        log_in(page)
+        login.log_into_ll(page)
         [
             scrape_friend_data(
                 friend_id, data, page, browser, season_match_category_cache

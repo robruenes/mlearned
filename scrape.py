@@ -215,7 +215,7 @@ def set_and_cache_question_counts(
             matches_df.at[i, category] = matches_df.at[i, category] + 1
 
     cached_match_df = matches_df.copy(deep=True)
-    cached_match_df.drop(columns=["Result"], inplace=True)
+    cached_match_df.drop(columns=["Result", "Rundle"], inplace=True)
     season_match_category_cache[season] = cached_match_df
 
 

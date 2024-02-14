@@ -13,12 +13,13 @@ where you'll be running this tool to rely on it:
 
 ```
 $ cd /dir/where/you/will/run/tool
-$ pyenv local 3.12.0
+$ pyenv local 3.11.0
 ```
 
 You'll also need to install a few dependencies. Do this _after_ you've created your environment.
 
 ```
+$ pip3 install pyarrow
 $ pip3 install pandas
 $ pip3 install lxml
 $ pip3 install google-generativeai

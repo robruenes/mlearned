@@ -5,3 +5,7 @@ small_friends.json
 .python-version
 .DS_Store
 data/
+# Just for now.
+training.ipynb
+__pycache__/
+.ipynb_checkpoints

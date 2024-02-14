@@ -44,6 +44,25 @@ def transform_category_value(category):
     return category_mapping[category]
 
 
+def renamed_stats_columns():
+    return {
+        "W": "Wins",
+        "L": "Losses",
+        "T": "Ties",
+        "PTS": "Points in Standings",
+        "MPD": "Match Points Differential",
+        "TMP": "Total Match Points",
+        "TCA": "Total Correct Answers",
+        "TPA": "Total Points Allowed",
+        "CAA": "Correct Answers Allowed",
+        "UfPA": "Unforced Points Allowed",
+        "DE": "Defensive Efficiency",
+        "FW": "Wins by Forfeit",
+        "FL": "Losses by Forfeit",
+        "3PT": "3 point questions answered correctly",
+    }
+
+
 def get_urls_for_friend(friend_id):
     base_url = "https://www.learnedleague.com/profiles.php?{}".format(friend_id)
     urls = {
@@ -87,9 +106,10 @@ def scrape_latest_data(page, url):
     return df
 
 
-def scrape_stats_data(page, url):
+def scrape_season_stats_data(page, url):
     """
-    Returns a dataframe with the following columns:
+    Returns a dataframe with one row per season,
+    with the following columns,
 
     - Wins: Total number of wins across all player history.
     - Losses: Total number of losses across all player history.
@@ -130,22 +150,7 @@ def scrape_stats_data(page, url):
     df["Rundle"] = df["Rundle"].transform(transform_rundle_value)
 
     df.rename(
-        columns={
-            "W": "Wins",
-            "L": "Losses",
-            "T": "Ties",
-            "PTS": "Points in Standings",
-            "MPD": "Match Points Differential",
-            "TMP": "Total Match Points",
-            "TCA": "Total Correct Answers",
-            "TPA": "Total Points Allowed",
-            "CAA": "Correct Answers Allowed",
-            "UfPA": "Unforced Points Allowed",
-            "DE": "Defensive Efficiency",
-            "FW": "Wins by Forfeit",
-            "FL": "Losses by Forfeit",
-            "3PT": "3 point questions answered correctly",
-        },
+        columns=renamed_stats_columns(),
         inplace=True,
     )
 
@@ -154,6 +159,34 @@ def scrape_stats_data(page, url):
     df.drop(["Season"], axis=1, inplace=True)
     df.reset_index(inplace=True, drop=True)
 
+    return df
+
+
+def scrape_career_stats_data(page, url):
+    """
+    Returns a dataframe with the same columns
+    as scrape_season_stats_data, but with the stats
+    for the player's overall career.
+    """
+    page.goto(url)
+    table = page.locator(".statscontainer").inner_html()
+    df = pd.read_html(StringIO(table))[0]
+
+    # Remove columns we don't need (Season,Rank), or which don't have a clear
+    # explanation found on the site (PCAA, MCW, QPct)
+    df.drop(["Season", "Rank", "PCAA", "MCW", "QPct"], axis=1, inplace=True)
+
+    # Drop everything but the career row.
+    # Drop career and per-rundle aggregated statistics.
+    df = df[df["Rundle"].map(lambda rundle: rundle == "Career")]
+
+    # At this point, we don't need that column anymore.
+    df.drop(["Rundle"], axis=1, inplace=True)
+    df.rename(
+        columns=renamed_stats_columns(),
+        inplace=True,
+    )
+    df.reset_index(inplace=True, drop=True)
     return df
 
 
@@ -280,7 +313,8 @@ def scrape_friend_data(friend_id, data, page, browser, season_match_category_cac
 
         elif page_type == "stats":
             print("Scraping stats data for {}...".format(friend_name))
-            data["stats"] = scrape_stats_data(page, url)
+            data["season_stats"] = scrape_season_stats_data(page, url)
+            data["career_stats"] = scrape_career_stats_data(page, url)
 
         elif page_type == "past seasons":
             print("Scraping match data for {}...".format(friend_name))
@@ -318,9 +352,13 @@ def write_csvs(friend):
     print_write_message(latest_stats)
     friend["latest"].to_csv(latest_stats, sep="\t", encoding="utf-8")
 
-    overall_stats = "{}/overall_league_stats.csv".format(dir_path)
-    print_write_message(overall_stats)
-    friend["stats"].to_csv(overall_stats, sep="\t", encoding="utf-8")
+    season_stats = "{}/per_season_stats.csv".format(dir_path)
+    print_write_message(season_stats)
+    friend["season_stats"].to_csv(season_stats, sep="\t", encoding="utf-8")
+
+    career_stats = "{}/career_stats.csv".format(dir_path)
+    print_write_message(career_stats)
+    friend["career_stats"].to_csv(career_stats, sep="\t", encoding="utf-8")
 
     for season, match_stats_df in friend["season_to_matches"].items():
         season_path = "{}/{}".format(dir_path, season)

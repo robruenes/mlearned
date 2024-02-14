@@ -110,7 +110,7 @@ def scrape_latest_data(page, url):
 def scrape_season_stats_data(page, url):
     """
     Returns a dataframe with one row per season,
-    with the following columns,
+    with the following columns:
 
     - Wins: Total number of wins across all player history.
     - Losses: Total number of losses across all player history.
@@ -299,8 +299,8 @@ def scrape_match_day_history(page, url, browser, season_match_category_cache):
                 Fore.LIGHTGREEN_EX
                 + f"....Already have question categories for all {season} matches"
             )
-            matches_df = matches_df.assign(**season_match_category_cache[season])
 
+        matches_df = matches_df.assign(**season_match_category_cache[season])
         season_to_matches[season] = matches_df
 
     return season_to_matches
@@ -352,20 +352,20 @@ def write_csvs(friend):
 
     latest_stats = f"{dir_path}/latest_league_stats.csv"
     print_write_message(latest_stats)
-    friend["latest"].to_csv(latest_stats, sep="\t", encoding="utf-8")
+    friend["latest"].to_csv(latest_stats, sep="\t", encoding="utf-8", index=False)
 
     season_stats = f"{dir_path}/per_season_stats.csv"
     print_write_message(season_stats)
-    friend["season_stats"].to_csv(season_stats, sep="\t", encoding="utf-8")
+    friend["season_stats"].to_csv(season_stats, sep="\t", encoding="utf-8", index=False)
 
     career_stats = f"{dir_path}/career_stats.csv"
     print_write_message(career_stats)
-    friend["career_stats"].to_csv(career_stats, sep="\t", encoding="utf-8")
+    friend["career_stats"].to_csv(career_stats, sep="\t", encoding="utf-8", index=False)
 
     for season, match_stats_df in friend["season_to_matches"].items():
         match_stats = f"{dir_path}/match_stats_{season}.csv"
         print_write_message(match_stats)
-        match_stats_df.to_csv(match_stats, sep="\t", encoding="utf-8")
+        match_stats_df.to_csv(match_stats, sep="\t", encoding="utf-8", index=False)
 
 
 if __name__ == "__main__":

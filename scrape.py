@@ -65,7 +65,7 @@ def renamed_stats_columns():
 
 
 def get_urls_for_friend(friend_id):
-    base_url = "https://www.learnedleague.com/profiles.php?{}".format(friend_id)
+    base_url = f"https://www.learnedleague.com/profiles.php?{friend_id}"
     urls = {
         "latest": base_url + "&1",
         "stats": base_url + "&2",
@@ -235,10 +235,7 @@ def set_and_cache_question_counts(
     }
     matches_df = matches_df.assign(**question_counts)
     for i, match in enumerate(match_pages):
-        print(
-            Fore.LIGHTYELLOW_EX
-            + "....Scraping question categories for match {}".format(i)
-        )
+        print(Fore.LIGHTYELLOW_EX + f"....Scraping question categories for match {i}")
         new_page.goto(match)
         question_categories = (
             pd.read_html(StringIO(new_page.inner_html("body")))[2][
@@ -279,7 +276,7 @@ def scrape_match_day_history(page, url, browser, season_match_category_cache):
     for t in tables:
         # This is of the form "LL#", where # is the season (e.g. "LL99")
         season = t.get_by_role("link").nth(0).inner_html()
-        print(Fore.LIGHTMAGENTA_EX + "...Scraping Season {}".format(season))
+        print(Fore.LIGHTMAGENTA_EX + f"...Scraping Season {season}")
 
         matches_df = matches_df_from_table(t)
 
@@ -300,9 +297,7 @@ def scrape_match_day_history(page, url, browser, season_match_category_cache):
         else:
             print(
                 Fore.LIGHTGREEN_EX
-                + "....Already have question categories for all {} matches".format(
-                    season
-                )
+                + f"....Already have question categories for all {season} matches"
             )
             matches_df = matches_df.assign(**season_match_category_cache[season])
 
@@ -315,22 +310,16 @@ def scrape_friend_data(friend_id, data, page, browser, season_match_category_cac
     friend_name = data["name"]
     for page_type, url in get_urls_for_friend(friend_id).items():
         if page_type == "latest":
-            print(
-                Fore.LIGHTCYAN_EX + "Scraping latest data for {}...".format(friend_name)
-            )
+            print(Fore.LIGHTCYAN_EX + f"Scraping latest data for {friend_name}...")
             data["latest"] = scrape_latest_data(page, url)
 
         elif page_type == "stats":
-            print(
-                Fore.LIGHTCYAN_EX + "Scraping stats data for {}...".format(friend_name)
-            )
+            print(Fore.LIGHTCYAN_EX + f"Scraping stats data for {friend_name}...")
             data["season_stats"] = scrape_season_stats_data(page, url)
             data["career_stats"] = scrape_career_stats_data(page, url)
 
         elif page_type == "past seasons":
-            print(
-                Fore.LIGHTCYAN_EX + "Scraping match data for {}...".format(friend_name)
-            )
+            print(Fore.LIGHTCYAN_EX + f"Scraping match data for {friend_name}...")
             data["season_to_matches"] = scrape_match_day_history(
                 page, url, browser, season_match_category_cache
             )
@@ -352,35 +341,31 @@ def scrape_data(friends):
 
 
 def print_write_message(filename):
-    print(Fore.LIGHTGREEN_EX + "Writing file {}...".format(filename))
+    print(Fore.LIGHTGREEN_EX + f"Writing file {filename}...")
 
 
 def write_csvs(friend):
     name = friend["name"].lower()
-    dir_path = "data/{}".format(name)
+    dir_path = f"data/{name}"
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
-    latest_stats = "{}/latest_league_stats.csv".format(dir_path)
+    latest_stats = f"{dir_path}/latest_league_stats.csv"
     print_write_message(latest_stats)
     friend["latest"].to_csv(latest_stats, sep="\t", encoding="utf-8")
 
-    season_stats = "{}/per_season_stats.csv".format(dir_path)
+    season_stats = f"{dir_path}/per_season_stats.csv"
     print_write_message(season_stats)
     friend["season_stats"].to_csv(season_stats, sep="\t", encoding="utf-8")
 
-    career_stats = "{}/career_stats.csv".format(dir_path)
+    career_stats = f"{dir_path}/career_stats.csv"
     print_write_message(career_stats)
     friend["career_stats"].to_csv(career_stats, sep="\t", encoding="utf-8")
 
     for season, match_stats_df in friend["season_to_matches"].items():
-        season_path = "{}/{}".format(dir_path, season)
-        if not os.path.exists(season_path):
-            os.makedirs(season_path)
-
-        season_stats = "{}/season_stats.csv".format(season_path)
-        print_write_message(season_stats)
-        match_stats_df.to_csv(season_stats, sep="\t", encoding="utf-8")
+        match_stats = f"{dir_path}/match_stats_{season}.csv"
+        print_write_message(match_stats)
+        match_stats_df.to_csv(match_stats, sep="\t", encoding="utf-8")
 
 
 if __name__ == "__main__":

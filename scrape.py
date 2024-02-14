@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import login
 from io import StringIO
+from colorama import Fore
 
 from playwright.sync_api import sync_playwright
 
@@ -234,7 +235,10 @@ def set_and_cache_question_counts(
     }
     matches_df = matches_df.assign(**question_counts)
     for i, match in enumerate(match_pages):
-        print("....Scraping question categories for match {}".format(i))
+        print(
+            Fore.LIGHTYELLOW_EX
+            + "....Scraping question categories for match {}".format(i)
+        )
         new_page.goto(match)
         question_categories = (
             pd.read_html(StringIO(new_page.inner_html("body")))[2][
@@ -275,7 +279,7 @@ def scrape_match_day_history(page, url, browser, season_match_category_cache):
     for t in tables:
         # This is of the form "LL#", where # is the season (e.g. "LL99")
         season = t.get_by_role("link").nth(0).inner_html()
-        print("...Scraping Season {}".format(season))
+        print(Fore.LIGHTMAGENTA_EX + "...Scraping Season {}".format(season))
 
         matches_df = matches_df_from_table(t)
 
@@ -295,7 +299,10 @@ def scrape_match_day_history(page, url, browser, season_match_category_cache):
 
         else:
             print(
-                "....Already have question categories for all {} matches".format(season)
+                Fore.LIGHTGREEN_EX
+                + "....Already have question categories for all {} matches".format(
+                    season
+                )
             )
             matches_df = matches_df.assign(**season_match_category_cache[season])
 
@@ -308,16 +315,22 @@ def scrape_friend_data(friend_id, data, page, browser, season_match_category_cac
     friend_name = data["name"]
     for page_type, url in get_urls_for_friend(friend_id).items():
         if page_type == "latest":
-            print("Scraping latest data for {}...".format(friend_name))
+            print(
+                Fore.LIGHTCYAN_EX + "Scraping latest data for {}...".format(friend_name)
+            )
             data["latest"] = scrape_latest_data(page, url)
 
         elif page_type == "stats":
-            print("Scraping stats data for {}...".format(friend_name))
+            print(
+                Fore.LIGHTCYAN_EX + "Scraping stats data for {}...".format(friend_name)
+            )
             data["season_stats"] = scrape_season_stats_data(page, url)
             data["career_stats"] = scrape_career_stats_data(page, url)
 
         elif page_type == "past seasons":
-            print("Scraping match data for {}...".format(friend_name))
+            print(
+                Fore.LIGHTCYAN_EX + "Scraping match data for {}...".format(friend_name)
+            )
             data["season_to_matches"] = scrape_match_day_history(
                 page, url, browser, season_match_category_cache
             )
@@ -335,11 +348,11 @@ def scrape_data(friends):
             )
             for friend_id, data in friends.items()
         ]
-    print("Scraping Finished!")
+    print(Fore.LIGHTGREEN_EX + "Scraping Finished!")
 
 
 def print_write_message(filename):
-    print("Writing file {}...".format(filename))
+    print(Fore.LIGHTGREEN_EX + "Writing file {}...".format(filename))
 
 
 def write_csvs(friend):

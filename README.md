@@ -11,14 +11,14 @@ With pyenv installed, make sure you have 3.11.0 on your machine by running `$ py
 If you don't, install it with `$ pyenv install 3.11.0`, and then you can configure the directory
 where you'll be running this tool to rely on it:
 
-```
+```zsh
 $ cd /dir/where/you/will/run/tool
 $ pyenv local 3.11.0
 ```
 
 You'll also need to install a few dependencies. Do this _after_ you've created your environment.
 
-```
+```zsh
 $ pip3 install colorama
 $ pip3 install pyarrow
 $ pip3 install pandas
@@ -52,9 +52,23 @@ The structure expected is below, mapping LearnedLeague user IDs to human-readabl
 
 # Scraping data from LL
 
-After following all of the steps above, you can scrape data from Learned League by running `python scrape_friend_data.py`.
+After following all of the steps above, you can scrape data from Learned League by running:
+
+```zsh
+$ python scrape_friend_data.py
+```
+
+This will produce one folder for each friend in `friends.json` in the directory `data/{name}`
 
 # Generating the training set
 
-After data has been scraped, a training set can be produced by running `python generate_training_set.py`, which will produce
-a CSV in `data/training_set.csv`.
+After data has been scraped, a training set can be produced by running:
+
+```zsh
+$ python generate_training_set.py
+```
+
+This will produce a set of intermediate files in the form `data/aggregated/{name}`, one
+for each directory `data/{name}` produced by the `scrape_friend_data.py` tool.
+
+These intermediate files are then used to produce the complete training set, `data/training_set.csv`.

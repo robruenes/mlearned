@@ -55,7 +55,11 @@ def predict_categories(questions):
         - Theatre - THEATRE
         - World Hist - WORLD HIST
 
-      Please output the category for the following question: "{question}"
+      Please output the category for the following question: "{question}".
+      Then, double check your work. If the category isn't one of the following,
+      pick the one that seems closest: AMER_HIST, ART, BUS/ECON, CLASS_MUSIC, CURR EVENTS, 
+      FILM, FOOD/DRINK, GAMES/SPORT, GEOGRAPHY, LANGUAGE, LIFESTYLE, LITERATURE, MATH,
+      POP MUSIC, SCIENCE, TELEVISION, THEATRE, WORLD_HIST.
     """
 
     model = genai.GenerativeModel(
@@ -178,4 +182,4 @@ def predict_categories_for_match(season, match_day):
 
 ### For testing
 if __name__ == "__main__":
-    print(predict_categories_for_match(season=100, match_day=1))
+    print(predict_categories_for_match(season=100, match_day=2))

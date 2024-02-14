@@ -19,6 +19,7 @@ $ pyenv local 3.11.0
 You'll also need to install a few dependencies. Do this _after_ you've created your environment.
 
 ```
+$ pip3 install colorama
 $ pip3 install pyarrow
 $ pip3 install pandas
 $ pip3 install lxml

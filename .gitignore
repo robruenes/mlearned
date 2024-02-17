@@ -2,6 +2,7 @@ friends.json
 full_friends.json
 small_friends.json
 branches.json
+old_branches.json
 .vscode
 .python-version
 .DS_Store

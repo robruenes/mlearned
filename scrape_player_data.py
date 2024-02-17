@@ -196,7 +196,6 @@ def matches_df_from_table(t):
     matches_df["Result"] = matches_df["Result"].replace(
         {"W": "1", "T": "0", "L": "-1", "F": "-2"}
     )
-    matches_df["Result"] = matches_df["Result"].str[0]
     # The string containing the rundle is formed like "Rundle C Sugarloaf Div 1"
     # so we just grab the exact char we need out of it.
     rundle = t.locator("h3").inner_text()[7:8]
@@ -393,13 +392,15 @@ if __name__ == "__main__":
     # from both explicit friends and members of requested branches.
     players = {}
 
-    with open("friends.json") as friends_file:
-        players = json.load(friends_file)
+    if os.path.exists("friends.json"):
+        with open("friends.json") as friends_file:
+            players = json.load(friends_file)
 
     branch_player_ids = set()
-    with open("branches.json") as branches_file:
-        branches = json.load(branches_file)
-        branch_player_ids.update(scrape_player_ids_from_branches(branches))
+    if os.path.exists("branches.json"):
+        with open("branches.json") as branches_file:
+            branches = json.load(branches_file)
+            branch_player_ids.update(scrape_player_ids_from_branches(branches))
 
     for player_id in branch_player_ids:
         if player_id not in players:

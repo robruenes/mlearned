@@ -194,7 +194,7 @@ def scrape_career_stats_data(page, url):
 def matches_df_from_table(t):
     matches_df = pd.read_html(StringIO(t.inner_html()))[0][["Result"]]
     matches_df["Result"] = matches_df["Result"].replace(
-        {"W": "3", "T": "2", "L": "1", "F": "0"}
+        {"W": "1", "T": "0", "L": "-1", "F": "-2"}
     )
     matches_df["Result"] = matches_df["Result"].str[0]
     # The string containing the rundle is formed like "Rundle C Sugarloaf Div 1"
@@ -403,7 +403,7 @@ if __name__ == "__main__":
 
     for player_id in branch_player_ids:
         if player_id not in players:
-            players[player_id] = {"name": f"Player {player_id}"}
+            players[player_id] = {"name": f"Player_{player_id}"}
 
     scrape_data_from_players(players)
     [write_csvs(data) for _, data in players.items()]

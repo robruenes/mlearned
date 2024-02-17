@@ -21,6 +21,7 @@ You'll also need to install a few dependencies. Do this _after_ you've created y
 ```zsh
 $ pip3 install colorama
 $ pip3 install pyarrow
+$ pip3 install html5lib
 $ pip3 install pandas
 $ pip3 install lxml
 $ pip3 install google-generativeai
@@ -50,15 +51,26 @@ The structure expected is below, mapping LearnedLeague user IDs to human-readabl
 }
 ```
 
+# branches.json
+
+You can also include a `branches.json` file, and the tool will scrape the match history of the players in
+that branch. The expected structure is identical to `friends.json`, but with branch IDs.
+
+```json
+  "12345": { "name": "Branch A" },
+  "23456": { "name": "Branch B" },
+  "34567": { "name": "Branch C" }
+```
+
 # Scraping data from LL
 
 After following all of the steps above, you can scrape data from Learned League by running:
 
 ```zsh
-$ python scrape_friend_data.py
+$ python scrape_player_data.py
 ```
 
-This will produce one folder for each friend in `friends.json` in the directory `data/{name}`
+This will produce one folder for each scraped player in the directory `data/{name}`
 
 # Generating the training set
 

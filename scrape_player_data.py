@@ -64,8 +64,8 @@ def renamed_stats_columns():
     }
 
 
-def get_urls_for_friend(friend_id):
-    base_url = f"https://www.learnedleague.com/profiles.php?{friend_id}"
+def get_urls_for_player(player_id):
+    base_url = f"https://www.learnedleague.com/profiles.php?{player_id}"
     urls = {
         "latest": base_url + "&1",
         "stats": base_url + "&2",
@@ -306,70 +306,104 @@ def scrape_match_day_history(page, url, browser, season_match_category_cache):
     return season_to_matches
 
 
-def scrape_friend_data(friend_id, data, page, browser, season_match_category_cache):
-    friend_name = data["name"]
-    for page_type, url in get_urls_for_friend(friend_id).items():
+def scrape_player_data(player_id, data, page, browser, season_match_category_cache):
+    player_name = data["name"]
+    for page_type, url in get_urls_for_player(player_id).items():
         if page_type == "latest":
-            print(Fore.LIGHTCYAN_EX + f"Scraping latest data for {friend_name}...")
+            print(Fore.LIGHTCYAN_EX + f"Scraping latest data for {player_name}...")
             data["latest"] = scrape_latest_data(page, url)
 
         elif page_type == "stats":
-            print(Fore.LIGHTCYAN_EX + f"Scraping stats data for {friend_name}...")
+            print(Fore.LIGHTCYAN_EX + f"Scraping stats data for {player_name}...")
             data["season_stats"] = scrape_season_stats_data(page, url)
             data["career_stats"] = scrape_career_stats_data(page, url)
 
         elif page_type == "past seasons":
-            print(Fore.LIGHTCYAN_EX + f"Scraping match data for {friend_name}...")
+            print(Fore.LIGHTCYAN_EX + f"Scraping match data for {player_name}...")
             data["season_to_matches"] = scrape_match_day_history(
                 page, url, browser, season_match_category_cache
             )
 
 
-def scrape_data(friends):
+def scrape_data_from_players(players):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         season_match_category_cache = {}
         login.log_into_ll(page)
         [
-            scrape_friend_data(
-                friend_id, data, page, browser, season_match_category_cache
+            scrape_player_data(
+                player_id, data, page, browser, season_match_category_cache
             )
-            for friend_id, data in friends.items()
+            for player_id, data in players.items()
         ]
+        browser.close()
     print(Fore.LIGHTGREEN_EX + "Scraping Finished!")
+
+
+def scrape_player_ids_from_branches(branches):
+    player_ids = set()
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        login.log_into_ll(page)
+        for branch_id, data in branches.items():
+            print(
+                Fore.LIGHTMAGENTA_EX
+                + "Scraping player IDs from branch: {}".format(data["name"])
+            )
+            page.goto(f"https://learnedleague.com/branch.php?{branch_id}")
+            player_flags = page.locator("a.flag").all()
+            for player_flag in player_flags:
+                player_ids.add(player_flag.get_attribute("href").split("?")[1])
+        browser.close()
+    return player_ids
 
 
 def print_write_message(filename):
     print(Fore.LIGHTGREEN_EX + f"Writing file {filename}...")
 
 
-def write_csvs(friend):
-    name = friend["name"].lower()
+def write_csvs(player):
+    name = player["name"].lower()
     dir_path = f"data/{name}"
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
     latest_stats = f"{dir_path}/latest_league_stats.csv"
     print_write_message(latest_stats)
-    friend["latest"].to_csv(latest_stats, sep="\t", encoding="utf-8", index=False)
+    player["latest"].to_csv(latest_stats, sep="\t", encoding="utf-8", index=False)
 
     season_stats = f"{dir_path}/per_season_stats.csv"
     print_write_message(season_stats)
-    friend["season_stats"].to_csv(season_stats, sep="\t", encoding="utf-8", index=False)
+    player["season_stats"].to_csv(season_stats, sep="\t", encoding="utf-8", index=False)
 
     career_stats = f"{dir_path}/career_stats.csv"
     print_write_message(career_stats)
-    friend["career_stats"].to_csv(career_stats, sep="\t", encoding="utf-8", index=False)
+    player["career_stats"].to_csv(career_stats, sep="\t", encoding="utf-8", index=False)
 
-    for season, match_stats_df in friend["season_to_matches"].items():
+    for season, match_stats_df in player["season_to_matches"].items():
         match_stats = f"{dir_path}/match_stats_{season}.csv"
         print_write_message(match_stats)
         match_stats_df.to_csv(match_stats, sep="\t", encoding="utf-8", index=False)
 
 
 if __name__ == "__main__":
+    # All of the players that we'll scrape data from, derived
+    # from both explicit friends and members of requested branches.
+    players = {}
+
     with open("friends.json") as friends_file:
-        friends = json.load(friends_file)
-        scrape_data(friends)
-        [write_csvs(data) for _, data in friends.items()]
+        players = json.load(friends_file)
+
+    branch_player_ids = set()
+    with open("branches.json") as branches_file:
+        branches = json.load(branches_file)
+        branch_player_ids.update(scrape_player_ids_from_branches(branches))
+
+    for player_id in branch_player_ids:
+        if player_id not in players:
+            players[player_id] = {"name": f"Player {player_id}"}
+
+    scrape_data_from_players(players)
+    [write_csvs(data) for _, data in players.items()]

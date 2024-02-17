@@ -68,7 +68,7 @@ def write_training_set(data_path, agg_path):
 
     # Before writing the training set, drop any entry where the player
     # forfeited.
-    training_set = training_set[training_set["Result"] != -2]
+    training_set = training_set[training_set["Result"] != -1]
 
     training_set.to_csv(training_set_path, sep="\t", encoding="utf-8", index=False)
     print(Fore.LIGHTGREEN_EX + f"Wrote training set to {training_set_path}!")

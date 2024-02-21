@@ -6,7 +6,7 @@ old_branches.json
 .vscode
 .python-version
 .DS_Store
-data/
+data*/
 # Just for now.
 training.ipynb
 __pycache__/

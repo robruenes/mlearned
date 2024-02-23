@@ -11,7 +11,7 @@ from colorama import Fore
 from playwright.sync_api import sync_playwright
 
 
-def get_categorical_stats_df(player_id, player_name, page):
+def scrape_categorical_stats_df(player_id, player_name, page):
     print(Fore.LIGHTMAGENTA_EX + f"Scraping categorical stats for {player_name}...")
     page.goto(f"https://www.learnedleague.com/profiles.php?{player_id}")
     table = page.locator("div.fl_latest.fl_l_l.pldata").inner_html()
@@ -33,7 +33,9 @@ def get_categorical_stats_df(player_id, player_name, page):
     return df
 
 
-def get_wins_losses_and_match_urls(player_id, player_name, season_to_match_urls, page):
+def scrape_wins_losses_and_match_urls(
+    player_id, player_name, season_to_match_urls, page
+):
     wins_and_losses = {}
 
     print(Fore.LIGHTCYAN_EX + f"Scraping match stats for {player_name}...")
@@ -66,7 +68,7 @@ def get_wins_losses_and_match_urls(player_id, player_name, season_to_match_urls,
     return wins_and_losses
 
 
-def get_season_match_categories(season_match_urls, page):
+def scrape_season_match_categories(season_match_urls, page):
     cols = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6"]
     df = pd.DataFrame(columns=cols)
     for match_url in season_match_urls:
@@ -113,7 +115,7 @@ def scrape_and_write_per_player_data(players, check_files, season_to_match_urls,
         if check_files and os.path.exists(categorical_stats_path):
             print(Fore.LIGHTGREEN_EX + f"{categorical_stats_path} already exists.")
         else:
-            df = get_categorical_stats_df(player_id, player_name, page)
+            df = scrape_categorical_stats_df(player_id, player_name, page)
             print_write_message(categorical_stats_path)
             df.to_csv(categorical_stats_path, index=False)
 
@@ -123,7 +125,7 @@ def scrape_and_write_per_player_data(players, check_files, season_to_match_urls,
                 + f"Individual match files for {player_name} already exist."
             )
         else:
-            wins_and_losses = get_wins_losses_and_match_urls(
+            wins_and_losses = scrape_wins_losses_and_match_urls(
                 player_id, player_name, season_to_match_urls, page
             )
             write_win_loss_csvs(player_dir, wins_and_losses)
@@ -139,7 +141,7 @@ def scrape_and_write_question_categories(check_files, season_to_match_urls, page
         if check_files and os.path.exists(season_categories_path):
             print(Fore.LIGHTGREEN_EX + f"{season_categories_path} already exists.")
         else:
-            season_match_categories = get_season_match_categories(
+            season_match_categories = scrape_season_match_categories(
                 season_to_match_urls[season], page
             )
             print_write_message(season_categories_path)

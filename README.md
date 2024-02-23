@@ -2,6 +2,12 @@
 
 This is a toy project to predict match-day performance for friends in Learned League.
 
+This repo currently includes a utility to scrape data from LearnedLeague (`scrape_learned_league.py`),
+and a script to predict the current match day's categories (`predict_categories.py`) by feeding
+the question text to Google's Gemini LLM and asking it to choose the correct category.
+
+Down the road, the prediction model will be included too.
+
 # Setup
 
 I'm running using Python 3.11.0 on Mac OS X with pyenv for environment management.
@@ -21,9 +27,9 @@ You'll also need to install a few dependencies. Do this _after_ you've created y
 ```zsh
 $ pip3 install colorama
 $ pip3 install pyarrow
+$ pip3 install lxml
 $ pip3 install html5lib
 $ pip3 install pandas
-$ pip3 install lxml
 $ pip3 install google-generativeai
 $ pip3 install playwright
 $ playright install

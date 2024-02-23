@@ -136,18 +136,14 @@ def scrape_and_write_question_categories(check_files, season_to_match_urls, page
 
     for season in season_to_match_urls:
         season_categories_path = f"{seasons_dir}/match_categories_{season}.csv"
-        if (
-            not check_files
-            or check_files
-            and not os.path.exists(season_categories_path)
-        ):
+        if check_files and os.path.exists(season_categories_path):
+            print(Fore.LIGHTGREEN_EX + f"{season_categories_path} already exists.")
+        else:
             season_match_categories = get_season_match_categories(
                 season_to_match_urls[season], page
             )
             print_write_message(season_categories_path)
             season_match_categories.to_csv(season_categories_path, index=False)
-        else:
-            print(Fore.LIGHTGREEN_EX + f"{season_categories_path} already exists.")
 
 
 def scrape_and_write_data(players, check_files):

@@ -8,6 +8,6 @@ old_branches.json
 .DS_Store
 data*/
 # Just for now.
-training.ipynb
+mlearned_training.ipynb
 __pycache__/
 .ipynb_checkpoints

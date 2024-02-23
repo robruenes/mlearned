@@ -70,7 +70,11 @@ After following all of the steps above, you can scrape data from Learned League 
 $ python scrape_learned_league.py
 ```
 
-This will produce one folder for each scraped player in the directory `data/{name}`
+This will produce one folder for each scraped player in the directory `data/{name}`, along with
+files containing the question categories for each season in `data/seasons`.
+
+By default, the script will check for the existence of output files before scraping duplicate
+data. To bypass this option and do a full scrape, you can pass the `-s` or `--skip_check_files` flags.
 
 # Generating the training set
 

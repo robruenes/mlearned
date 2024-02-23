@@ -74,6 +74,8 @@ def scrape_season_match_categories(season_match_urls, page):
     for match_url in season_match_urls:
         _, season_and_match = match_url.split("?")
         season, match = season_and_match.split("&")
+        # TODO: Update logic to handle seasons from 59 and down, which don't
+        # have the same page structure.
         print(
             Fore.LIGHTYELLOW_EX
             + f"Scraping question categories for LL{season}, match {match}..."

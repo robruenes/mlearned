@@ -184,28 +184,16 @@ def scrape_player_ids_from_branches(branches):
     return player_ids
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Scrape data from LearnedLeague.")
-    parser.add_argument(
-        "-s",
-        "--skip_check_files",
-        action="store_true",
-        help="Whether to skip checking if data is already on disk (inferred from filenames) before scraping.",
-    )
-
-    args = parser.parse_args()
-
-    # All of the players that we'll scrape data from, derived
-    # from both explicit friends and members of requested branches.
+def get_players(args):
     players = {}
 
-    if os.path.exists("friends.json"):
-        with open("friends.json") as friends_file:
-            players = json.load(friends_file)
+    if os.path.exists(args.players_file):
+        with open(args.players_file) as players_file:
+            players = json.load(players_file)
 
     branch_player_ids = set()
-    if os.path.exists("branches.json"):
-        with open("branches.json") as branches_file:
+    if args.branches_file and os.path.exists(args.branches_file):
+        with open(args.branches_file) as branches_file:
             branches = json.load(branches_file)
             branch_player_ids.update(scrape_player_ids_from_branches(branches))
 
@@ -213,4 +201,34 @@ if __name__ == "__main__":
         if player_id not in players:
             players[player_id] = {"name": f"Player_{player_id}"}
 
-    scrape_and_write_data(players, not args.skip_check_files)
+    return players
+
+
+def get_parsed_args():
+    parser = argparse.ArgumentParser(description="Scrape data from LearnedLeague.")
+    parser.add_argument(
+        "-s",
+        "--skip_check_files",
+        action="store_true",
+        help="Whether to skip checking if data is already on disk (inferred from filenames) before scraping.",
+    )
+    parser.add_argument(
+        "-p",
+        "--players_file",
+        type=str,
+        default="friends.json",
+        help="Path of JSON file containing players of interest. Defaults to friends.json",
+    )
+    parser.add_argument(
+        "-b",
+        "--branches_file",
+        type=str,
+        default=None,
+        help="Path of JSON file containing branches of interest. Defaults to none.",
+    )
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    args = get_parsed_args()
+    scrape_and_write_data(get_players(args), not args.skip_check_files)

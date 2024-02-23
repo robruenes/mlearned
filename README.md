@@ -49,9 +49,7 @@ The tool expects that you have a few environment variables defined.
 
 # friends.json
 
-The tool expects that you have a file named `friends.json` in the same directory, for all of the friends who you want to make predictions for.
-
-The structure expected is below, mapping LearnedLeague user IDs to human-readable names.
+The scraper expects a JSON file containing players of interest in the following format, mapping LearnedLeague user IDs to human-readable names.
 
 ```json
 {
@@ -61,16 +59,20 @@ The structure expected is below, mapping LearnedLeague user IDs to human-readabl
 }
 ```
 
+By default, it expects it to be named `friends.json` and located in the same directory, but this can be overridden
+using the `-p`/`--players_file` flag.
+
 # branches.json
 
-You can also include a `branches.json` file, and the tool will scrape the match history of the players in
-that branch. The expected structure is identical to `friends.json`, but with branch IDs.
+The scraper can also optionally use a file to scrape all of the players in a given branch, in the same format:
 
 ```json
   "12345": { "name": "Branch A" },
   "23456": { "name": "Branch B" },
   "34567": { "name": "Branch C" }
 ```
+
+You can pass this file to the script by using the `-b`/`--branches_file` flag.
 
 # Scraping data from LL
 

@@ -8,6 +8,10 @@ the question text to Google's Gemini LLM and asking it to choose the correct cat
 
 Down the road, the prediction model will be included too.
 
+In the spirit of Learned League: inspecting the LLM's question category output for
+a current match day is _absolutely_ cheating and must be avoided by anyone relying
+on this tool :)
+
 # Setup
 
 I'm running using Python 3.11.0 on Mac OS X with pyenv for environment management.

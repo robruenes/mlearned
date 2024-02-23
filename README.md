@@ -67,20 +67,11 @@ that branch. The expected structure is identical to `friends.json`, but with bra
 After following all of the steps above, you can scrape data from Learned League by running:
 
 ```zsh
-$ python scrape_player_data.py
+$ python scrape_learned_league.py
 ```
 
-This will produce one folder for each scraped player in the directory `data/{name}`
+This will produce one folder for each scraped player in the directory `data/{name}`, along with
+files containing the question categories for each season in `data/seasons`.
 
-# Generating the training set
-
-After data has been scraped, a training set can be produced by running:
-
-```zsh
-$ python generate_training_set.py
-```
-
-This will produce a set of intermediate files in the form `data/aggregated/{name}`, one
-for each directory `data/{name}` produced by the `scrape_friend_data.py` tool.
-
-These intermediate files are then used to produce the complete training set, `data/training_set.csv`.
+By default, the script will check for the existence of output files before scraping duplicate
+data. To bypass this option and do a full scrape, you can pass the `-s` or `--skip_check_files` flags.

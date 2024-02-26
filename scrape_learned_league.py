@@ -79,18 +79,18 @@ def scrape_season_match_categories(season_match_urls, page):
     for match_url in season_match_urls:
         _, season_and_match = match_url.split("?")
         season, match = season_and_match.split("&")
-        # TODO: Update logic to handle seasons from 59 and down, which don't
-        # have the same page structure.
         print(
             Fore.LIGHTYELLOW_EX
             + f"Scraping question categories for LL{season}, match {match}..."
         )
         page.goto(match_url)
-        questions = page.locator("div.ind-Q20.dont-break-out").all()
+        pre_s60_locator = page.locator("div.ind-Q20")
+        s60_and_up_locator = page.locator("div.ind-Q20.dont-break-out")
+        questions = pre_s60_locator.or_(s60_and_up_locator).all()
         row = pd.DataFrame(
             data=[
                 (
-                    text[3 : text.index(" -")]
+                    text[4 : text.index(" -")]
                     for text in [question.inner_text() for question in questions]
                 )
             ],
@@ -114,7 +114,7 @@ def write_win_loss_csvs(dir_path, player_matches):
 def scrape_and_write_per_player_data(players, check_files, season_to_match_urls, page):
     for player_id in players:
         player_name = players[player_id]["name"].lower()
-        player_dir = f"data/{player_name}"
+        player_dir = f"data/players/{player_name}"
         if not os.path.exists(player_dir):
             os.makedirs(player_dir)
 
@@ -207,7 +207,7 @@ def get_players(args):
 
     for player_id in branch_player_ids:
         if player_id not in players:
-            players[player_id] = {"name": f"Player_{player_id}"}
+            players[player_id] = {"name": player_id}
 
     return players
 

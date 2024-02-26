@@ -8,13 +8,18 @@ import pandas as pd
 from io import StringIO
 from colorama import Fore
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError
 
 
 def scrape_categorical_stats_df(player_id, player_name, page):
     print(Fore.LIGHTMAGENTA_EX + f"Scraping categorical stats for {player_name}...")
     page.goto(f"https://www.learnedleague.com/profiles.php?{player_id}")
-    table = page.locator("div.fl_latest.fl_l_l.pldata").inner_html()
+
+    try:
+        table = page.locator("div.fl_latest.fl_l_l.pldata").inner_html(timeout=2000)
+    except TimeoutError:
+        print(Fore.LIGHTRED_EX + f"Timed out, player {player_id} is likely inactive.")
+        return None
 
     # We expect that there's only a single table on the page.
     df = pd.read_html(StringIO(table))[0]
@@ -118,8 +123,9 @@ def scrape_and_write_per_player_data(players, check_files, season_to_match_urls,
             print(Fore.LIGHTGREEN_EX + f"{categorical_stats_path} already exists.")
         else:
             df = scrape_categorical_stats_df(player_id, player_name, page)
-            print_write_message(categorical_stats_path)
-            df.to_csv(categorical_stats_path, index=False)
+            if df is not None:
+                print_write_message(categorical_stats_path)
+                df.to_csv(categorical_stats_path, index=False)
 
         if check_files and glob.glob(f"{player_dir}/LL*.csv"):
             print(
